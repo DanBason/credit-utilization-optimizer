@@ -1,0 +1,813 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Credit Utilization Optimizer</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --panel: #ffffff;
+    --border: #e1e4e8;
+    --text: #1a1d23;
+    --text-dim: #6b7280;
+    --accent: #2563eb;
+    --accent-dim: #dbeafe;
+    --green: #16a34a;
+    --green-bg: #dcfce7;
+    --yellow: #b45309;
+    --yellow-bg: #fef3c7;
+    --red: #dc2626;
+    --red-bg: #fee2e2;
+    --gray-bg: #f1f3f5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1e2126;
+      --border: #2c3038;
+      --text: #e8e9ec;
+      --text-dim: #9aa0aa;
+      --accent: #3b82f6;
+      --accent-dim: #1e3a5f;
+      --green: #4ade80;
+      --green-bg: #14532d;
+      --yellow: #fbbf24;
+      --yellow-bg: #451a03;
+      --red: #f87171;
+      --red-bg: #450a0a;
+      --gray-bg: #262a31;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.4;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 24px 16px 80px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .subtitle { color: var(--text-dim); font-size: 13px; margin-bottom: 24px; }
+  h2 { font-size: 15px; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+    margin-bottom: 18px;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border); }
+  th { color: var(--text-dim); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .03em; }
+  input[type=text], input[type=number], input[type=date], select {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+  }
+  input[type=radio] { transform: scale(1.1); }
+  button {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  button.secondary {
+    background: var(--gray-bg);
+    color: var(--text);
+  }
+  button.danger { background: var(--red); }
+  button.small { padding: 4px 8px; font-size: 12px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+  .field { flex: 1; min-width: 140px; }
+  .field label { display: block; font-size: 11px; color: var(--text-dim); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .03em; }
+  .toggle-row { display: flex; align-items: center; gap: 8px; }
+  .switch { position: relative; width: 40px; height: 22px; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; cursor: pointer; inset: 0; background: var(--gray-bg); border-radius: 22px; transition: .2s; border: 1px solid var(--border); }
+  .slider:before { content: ""; position: absolute; height: 16px; width: 16px; left: 2px; top: 2px; background: white; border-radius: 50%; transition: .2s; }
+  input:checked + .slider { background: var(--accent); }
+  input:checked + .slider:before { transform: translateX(18px); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .badge.green { background: var(--green-bg); color: var(--green); }
+  .badge.yellow { background: var(--yellow-bg); color: var(--yellow); }
+  .badge.red { background: var(--red-bg); color: var(--red); }
+  .badge.gray { background: var(--gray-bg); color: var(--text-dim); }
+  .oldest-tag { font-size: 10px; background: var(--accent-dim); color: var(--accent); padding: 1px 6px; border-radius: 10px; margin-left: 6px; }
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 14px; }
+  .stat { background: var(--gray-bg); border-radius: 8px; padding: 12px; }
+  .stat .label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .03em; }
+  .stat .value { font-size: 20px; font-weight: 700; margin-top: 2px; }
+  .alert-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .alert-item { padding: 10px 12px; border-radius: 8px; font-size: 13px; display: flex; gap: 8px; }
+  .alert-item.info { background: var(--accent-dim); color: var(--accent); }
+  .alert-item.warn { background: var(--yellow-bg); color: var(--yellow); }
+  .alert-item.danger { background: var(--red-bg); color: var(--red); }
+  .alert-item.ok { background: var(--green-bg); color: var(--green); }
+  .util-bar-track { width: 100%; height: 6px; background: var(--gray-bg); border-radius: 4px; overflow: hidden; margin-top: 4px; }
+  .util-bar-fill { height: 100%; border-radius: 4px; }
+  textarea {
+    width: 100%; min-height: 90px; border: 1px solid var(--border); border-radius: 6px;
+    background: var(--bg); color: var(--text); padding: 8px; font-size: 12px; font-family: ui-monospace, monospace;
+  }
+  .empty { color: var(--text-dim); font-size: 13px; padding: 8px 0; }
+  .week-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .week-nav button { padding: 4px 10px; }
+  .week-label { font-weight: 600; font-size: 13px; }
+  .footnote { font-size: 11px; color: var(--text-dim); margin-top: 10px; }
+  .col-actions { width: 36px; }
+  @media (max-width: 640px) {
+    table, thead, tbody, th, td, tr { display: block; }
+    thead { display: none; }
+    td { border: none; padding: 4px 0; }
+    tr { border-bottom: 1px solid var(--border); padding: 8px 0; }
+    td::before { content: attr(data-label); display: block; font-size: 10px; color: var(--text-dim); text-transform: uppercase; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Credit Utilization Optimizer</h1>
+  <div class="subtitle">Personal monthly spend allocator for maximizing FICO utilization scoring. All data stays in this browser (localStorage) — nothing is sent anywhere.</div>
+
+  <!-- CARD PROFILES -->
+  <div class="panel">
+    <h2>1. Card Profiles</h2>
+    <table id="cardsTable">
+      <thead>
+        <tr>
+          <th>Primary</th>
+          <th>Card Name</th>
+          <th>Credit Limit ($)</th>
+          <th>Open Date</th>
+          <th>Statement Day</th>
+          <th>Last Activity</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="cardsBody"></tbody>
+    </table>
+    <div id="cardsEmpty" class="empty" style="display:none;">No cards yet — add one below.</div>
+    <div class="row" style="margin-top:12px;">
+      <button id="addCardBtn" type="button">+ Add Card</button>
+    </div>
+  </div>
+
+  <!-- FICO DATA -->
+  <div class="panel">
+    <h2>2. FICO Report Snapshot <span style="font-weight:400; color:var(--text-dim); font-size:12px;">(optional, paste raw text)</span></h2>
+    <textarea id="ficoText" placeholder="Paste any text from your FICO/credit report here (e.g. &quot;Overall utilization: 12%&quot;, &quot;Total accounts: 6&quot;, &quot;Average age of accounts: 4 years 3 months&quot;)..."></textarea>
+    <div class="row" style="margin-top:10px;">
+      <button id="parseFicoBtn" type="button" class="secondary">Parse Snapshot</button>
+    </div>
+    <div id="ficoParsed" style="margin-top:10px; font-size:13px;"></div>
+  </div>
+
+  <!-- MONTHLY PLANNING -->
+  <div class="panel">
+    <h2>3. Monthly Planning</h2>
+    <div class="row">
+      <div class="field">
+        <label>Total Expected Monthly Spend ($)</label>
+        <input type="number" id="totalSpend" min="0" step="1" placeholder="e.g. 2400">
+      </div>
+      <div class="field" style="flex:0 0 auto;">
+        <label>AZEO Mode (All Zero Except One)</label>
+        <div class="toggle-row">
+          <label class="switch">
+            <input type="checkbox" id="azeoToggle">
+            <span class="slider"></span>
+          </label>
+          <span id="azeoStatusText" style="font-size:12px; color:var(--text-dim);">Off</span>
+        </div>
+      </div>
+      <div class="field" style="flex:0 0 auto;">
+        <button id="calcBtn" type="button">Calculate Target Allocation</button>
+      </div>
+    </div>
+    <div class="footnote">AZEO: concentrates a small 1–3% balance on your primary card and drives every other card to $0 before its statement closes — optimizes "proportion of accounts with a balance." Non-AZEO spreads spend proportionally to each card's limit so every card lands at the same utilization ratio.</div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="panel">
+    <h2>4. Target Allocation Dashboard</h2>
+    <div id="dashboardEmpty" class="empty">Add cards and click "Calculate Target Allocation" to see your plan.</div>
+    <div id="dashboardContent" style="display:none;">
+      <div class="summary-grid" id="summaryGrid"></div>
+      <table id="allocTable">
+        <thead>
+          <tr>
+            <th>Card</th>
+            <th>Target Spend</th>
+            <th>Target Utilization</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="allocBody"></tbody>
+      </table>
+      <h2 style="margin-top:18px;">Actionable Next Steps</h2>
+      <ul class="alert-list" id="alertList"></ul>
+    </div>
+  </div>
+
+  <!-- WEEKLY TRACKER -->
+  <div class="panel">
+    <h2>5. Weekly Pacing Tracker</h2>
+    <div id="trackerEmpty" class="empty">Calculate a target allocation first, then log your weekly balances here.</div>
+    <div id="trackerContent" style="display:none;">
+      <div class="week-nav">
+        <button id="prevWeekBtn" type="button" class="secondary small">&larr; Prev</button>
+        <span class="week-label" id="weekLabel"></span>
+        <button id="nextWeekBtn" type="button" class="secondary small">Next &rarr;</button>
+        <button id="thisWeekBtn" type="button" class="secondary small">This Week</button>
+      </div>
+      <table id="trackerTable">
+        <thead>
+          <tr>
+            <th>Card</th>
+            <th>Target Spend</th>
+            <th>Current Balance ($)</th>
+            <th>Pace Status</th>
+          </tr>
+        </thead>
+        <tbody id="trackerBody"></tbody>
+      </table>
+      <div class="footnote">Pace status compares your logged balance against expected progress through the current statement cycle (based on each card's statement day).</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- Constants (optimization guardrails) ----------
+  const IDEAL_MIN = 0.01;      // 1%
+  const IDEAL_MAX = 0.049;     // 4.9%
+  const HARD_CAP = 0.099;      // 9.9%
+  const AZEO_MIN = 0.01;       // 1%
+  const AZEO_MAX = 0.03;       // 3%
+  const OLD_CARD_MONTHS = 24;  // account age protection threshold
+  const INACTIVITY_ALERT_DAYS = 90; // ~3 months since last activity
+  const KEEPALIVE_AMOUNT = 5;
+
+  const STORAGE_KEY = "creditOptimizerData_v1";
+
+  // ---------- State ----------
+  let state = loadState();
+
+  function defaultState() {
+    return {
+      cards: [],
+      totalSpend: null,
+      azeoEnabled: false,
+      weeklyLogs: {},   // { "YYYY-Www": { cardId: balance } }
+      lastAllocation: null, // cached result of last calculation, keyed by card id -> {target, util}
+    };
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return defaultState();
+      const parsed = JSON.parse(raw);
+      return Object.assign(defaultState(), parsed);
+    } catch (e) {
+      return defaultState();
+    }
+  }
+
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function uid() {
+    return "c" + Math.random().toString(36).slice(2, 10);
+  }
+
+  // ---------- Date helpers ----------
+  function monthsBetween(dateStr, ref) {
+    if (!dateStr) return 0;
+    const d = new Date(dateStr + "T00:00:00");
+    if (isNaN(d)) return 0;
+    const r = ref || new Date();
+    return (r.getFullYear() - d.getFullYear()) * 12 + (r.getMonth() - d.getMonth());
+  }
+
+  function daysSince(dateStr, ref) {
+    if (!dateStr) return Infinity;
+    const d = new Date(dateStr + "T00:00:00");
+    if (isNaN(d)) return Infinity;
+    const r = ref || new Date();
+    return Math.floor((r - d) / 86400000);
+  }
+
+  function isoWeekKey(date) {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = (d.getUTCDay() + 6) % 7;
+    d.setUTCDate(d.getUTCDate() - dayNum + 3);
+    const firstThursday = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+    const week = 1 + Math.round(((d - firstThursday) / 86400000 - 3 + ((firstThursday.getUTCDay() + 6) % 7)) / 7);
+    return d.getUTCFullYear() + "-W" + String(week).padStart(2, "0");
+  }
+
+  function weekStart(date) {
+    const d = new Date(date);
+    const day = (d.getDay() + 6) % 7; // Monday = 0
+    d.setDate(d.getDate() - day);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  function fmtMoney(n) {
+    return "$" + (Math.round(n * 100) / 100).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  }
+
+  function fmtPct(n) {
+    return (n * 100).toFixed(2) + "%";
+  }
+
+  // ---------- Statement cycle helpers ----------
+  function cycleProgress(statementDay, ref) {
+    const r = ref || new Date();
+    const day = Math.min(Math.max(parseInt(statementDay, 10) || 1, 1), 28);
+    // find most recent statement close on/before today, and the next one
+    let close = new Date(r.getFullYear(), r.getMonth(), day);
+    if (close > r) close = new Date(r.getFullYear(), r.getMonth() - 1, day);
+    const nextClose = new Date(close.getFullYear(), close.getMonth() + 1, day);
+    const cycleLen = (nextClose - close) / 86400000;
+    const elapsed = (r - close) / 86400000;
+    const daysUntilClose = Math.ceil((nextClose - r) / 86400000);
+    return { progress: Math.min(Math.max(elapsed / cycleLen, 0), 1), daysUntilClose };
+  }
+
+  // ---------- Rendering: Cards table ----------
+  function renderCards() {
+    const body = document.getElementById("cardsBody");
+    const empty = document.getElementById("cardsEmpty");
+    body.innerHTML = "";
+    empty.style.display = state.cards.length ? "none" : "block";
+
+    const oldestId = oldestCardId();
+
+    state.cards.forEach((card) => {
+      const tr = document.createElement("tr");
+
+      const ageMonths = monthsBetween(card.openDate);
+      const isOld = ageMonths >= OLD_CARD_MONTHS;
+
+      tr.innerHTML = `
+        <td data-label="Primary"><input type="radio" name="primaryCard" ${card.isPrimary ? "checked" : ""}></td>
+        <td data-label="Card Name"><input type="text" value="${escapeAttr(card.name || "")}" placeholder="Card name"></td>
+        <td data-label="Limit"><input type="number" min="0" step="1" value="${card.limit ?? ""}" placeholder="0"></td>
+        <td data-label="Open Date"><input type="date" value="${card.openDate || ""}"></td>
+        <td data-label="Statement Day"><input type="number" min="1" max="28" value="${card.statementDay ?? ""}" placeholder="e.g. 15"></td>
+        <td data-label="Last Activity"><input type="date" value="${card.lastActivity || ""}"></td>
+        <td class="col-actions"><button type="button" class="danger small" title="Remove card">&times;</button></td>
+      `;
+
+      // Field wiring
+      const [primaryInput, nameInput, limitInput, openInput, stmtInput, activityInput] = tr.querySelectorAll("input");
+      const delBtn = tr.querySelector("button");
+
+      primaryInput.addEventListener("change", () => {
+        state.cards.forEach((c) => (c.isPrimary = c.id === card.id));
+        saveState();
+        renderCards();
+      });
+      nameInput.addEventListener("input", (e) => { card.name = e.target.value; saveState(); });
+      limitInput.addEventListener("input", (e) => { card.limit = parseFloat(e.target.value) || 0; saveState(); });
+      openInput.addEventListener("input", (e) => { card.openDate = e.target.value; saveState(); renderCards(); });
+      stmtInput.addEventListener("input", (e) => { card.statementDay = parseInt(e.target.value, 10) || null; saveState(); });
+      activityInput.addEventListener("input", (e) => { card.lastActivity = e.target.value; saveState(); });
+      delBtn.addEventListener("click", () => {
+        if (confirm(`Remove "${card.name || "this card"}"? This cannot be undone.`)) {
+          state.cards = state.cards.filter((c) => c.id !== card.id);
+          saveState();
+          renderCards();
+          renderDashboard();
+          renderTracker();
+        }
+      });
+
+      // Name cell: append oldest tag + age
+      const nameCell = tr.children[1];
+      const meta = document.createElement("div");
+      meta.style.fontSize = "10px";
+      meta.style.color = "var(--text-dim)";
+      meta.style.marginTop = "2px";
+      meta.textContent = card.openDate ? `${ageMonths} mo old` : "";
+      if (card.id === oldestId && state.cards.length > 1) {
+        const tag = document.createElement("span");
+        tag.className = "oldest-tag";
+        tag.textContent = "OLDEST";
+        meta.appendChild(tag);
+      } else if (isOld) {
+        const tag = document.createElement("span");
+        tag.className = "oldest-tag";
+        tag.textContent = "24mo+";
+        meta.appendChild(tag);
+      }
+      nameCell.appendChild(meta);
+
+      body.appendChild(tr);
+    });
+  }
+
+  function oldestCardId() {
+    let oldest = null;
+    state.cards.forEach((c) => {
+      if (!c.openDate) return;
+      if (!oldest || new Date(c.openDate) < new Date(oldest.openDate)) oldest = c;
+    });
+    return oldest ? oldest.id : null;
+  }
+
+  function escapeAttr(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+  }
+
+  document.getElementById("addCardBtn").addEventListener("click", () => {
+    state.cards.push({
+      id: uid(),
+      name: "",
+      limit: 0,
+      openDate: "",
+      statementDay: null,
+      lastActivity: "",
+      isPrimary: state.cards.length === 0,
+    });
+    saveState();
+    renderCards();
+  });
+
+  // ---------- FICO parsing (best-effort regex) ----------
+  document.getElementById("parseFicoBtn").addEventListener("click", () => {
+    const text = document.getElementById("ficoText").value;
+    const out = document.getElementById("ficoParsed");
+    if (!text.trim()) { out.innerHTML = ""; return; }
+
+    const utilMatch = text.match(/(?:overall|total|aggregate)?\s*utili[sz]ation[^\d]{0,10}(\d{1,3}(?:\.\d+)?)\s*%/i)
+                    || text.match(/(\d{1,3}(?:\.\d+)?)\s*%\s*utili[sz]ation/i);
+    const accountsMatch = text.match(/(?:total\s+)?(?:active\s+)?accounts?[^\d]{0,10}(\d{1,3})/i);
+    const aaoaMatch = text.match(/average age[^\d]{0,20}(\d+)\s*(?:years?|yrs?)?(?:[^\d]{0,10}(\d{1,2})\s*(?:months?|mos?))?/i);
+
+    let html = "";
+    if (utilMatch) html += `<div>Overall utilization: <strong>${utilMatch[1]}%</strong></div>`;
+    if (accountsMatch) html += `<div>Total active accounts: <strong>${accountsMatch[1]}</strong></div>`;
+    if (aaoaMatch) {
+      const yrs = aaoaMatch[1] || "0";
+      const mos = aaoaMatch[2] || "0";
+      html += `<div>Average age of accounts: <strong>${yrs}y ${mos}m</strong></div>`;
+    }
+    if (!html) html = `<div class="empty">Couldn't auto-detect structured fields — this is best-effort text matching only. Use the numbers above for reference alongside your own card data.</div>`;
+    out.innerHTML = html;
+  });
+
+  // ---------- Init form fields from state ----------
+  document.getElementById("totalSpend").value = state.totalSpend ?? "";
+  document.getElementById("azeoToggle").checked = !!state.azeoEnabled;
+  updateAzeoLabel();
+
+  document.getElementById("totalSpend").addEventListener("input", (e) => {
+    state.totalSpend = e.target.value === "" ? null : parseFloat(e.target.value);
+    saveState();
+  });
+  document.getElementById("azeoToggle").addEventListener("change", (e) => {
+    state.azeoEnabled = e.target.checked;
+    updateAzeoLabel();
+    saveState();
+  });
+  function updateAzeoLabel() {
+    document.getElementById("azeoStatusText").textContent = state.azeoEnabled ? "On" : "Off";
+  }
+
+  // ---------- Core optimization engine ----------
+  // Non-AZEO: proportional-to-limit allocation makes every card land at the
+  // same utilization ratio r = totalSpend / sum(limits). This is the
+  // mathematically simplest way to keep every card in the same band at once.
+  //
+  // AZEO: primary card absorbs 100% of spend; every secondary card targets $0.
+  //
+  // Under-allocation guardrail: if totalSpend can't put every card at least
+  // at IDEAL_MIN utilization, fall back to concentrating spend on the
+  // primary/highest-limit card instead of diluting it across all cards.
+  function computeAllocation() {
+    const cards = state.cards.filter((c) => c.limit > 0);
+    const totalSpend = state.totalSpend || 0;
+    if (!cards.length) return null;
+
+    const sumLimits = cards.reduce((s, c) => s + c.limit, 0);
+    const primary = cards.find((c) => c.isPrimary) || cards.reduce((a, b) => (b.limit > a.limit ? b : a));
+
+    const perCardIdealMin = cards.reduce((s, c) => s + c.limit * IDEAL_MIN, 0);
+    const forceAzeoFallback = !state.azeoEnabled && totalSpend > 0 && totalSpend < perCardIdealMin;
+
+    const useAzeo = state.azeoEnabled || forceAzeoFallback;
+
+    const allocations = {}; // cardId -> { target, util }
+    const alerts = [];
+
+    if (useAzeo) {
+      cards.forEach((c) => {
+        allocations[c.id] = { target: 0, util: 0 };
+      });
+      const primaryUtilUncapped = primary.limit > 0 ? totalSpend / primary.limit : 0;
+      allocations[primary.id] = { target: totalSpend, util: primaryUtilUncapped };
+
+      if (forceAzeoFallback) {
+        alerts.push({
+          level: "info",
+          text: `Total spend (${fmtMoney(totalSpend)}) is too low to keep every card meaningfully active, so it's all concentrated on your primary card "${primary.name || "Primary"}" instead of being spread thin.`,
+        });
+      }
+      if (primaryUtilUncapped > HARD_CAP) {
+        const payoffTo = IDEAL_MAX;
+        const keepBalance = primary.limit * payoffTo;
+        const payAmount = totalSpend - keepBalance;
+        alerts.push({
+          level: "danger",
+          text: `"${primary.name || "Primary card"}" is projected at ${fmtPct(primaryUtilUncapped)} utilization — above the 9.9% penalty threshold. Make a mid-cycle payment of ${fmtMoney(payAmount)} before the statement closes to bring it down to ~${fmtPct(payoffTo)}.`,
+        });
+      } else if (primaryUtilUncapped > IDEAL_MAX) {
+        alerts.push({
+          level: "warn",
+          text: `"${primary.name || "Primary card"}" is at ${fmtPct(primaryUtilUncapped)}, above the ideal 1–4.9% band but still under the 9.9% cap. Consider a small paydown for the optimal tier.`,
+        });
+      } else if (primaryUtilUncapped < IDEAL_MIN) {
+        alerts.push({
+          level: "info",
+          text: `"${primary.name || "Primary card"}" is projected under 1% utilization. Fine for scoring purposes, but you have room to raise total spend without leaving the ideal band.`,
+        });
+      } else {
+        alerts.push({
+          level: "ok",
+          text: `"${primary.name || "Primary card"}" lands at ${fmtPct(primaryUtilUncapped)} — right in the ideal 1–4.9% zone.`,
+        });
+      }
+    } else {
+      const ratio = sumLimits > 0 ? totalSpend / sumLimits : 0;
+      cards.forEach((c) => {
+        const target = ratio * c.limit;
+        allocations[c.id] = { target, util: ratio };
+      });
+
+      if (ratio > HARD_CAP) {
+        const targetRatio = IDEAL_MAX;
+        const payAmount = totalSpend - targetRatio * sumLimits;
+        alerts.push({
+          level: "danger",
+          text: `Aggregate + per-card utilization is projected at ${fmtPct(ratio)} — above the 9.9% threshold on every card. Pay down roughly ${fmtMoney(payAmount)} total (proportionally across cards) before statements close.`,
+        });
+      } else if (ratio > IDEAL_MAX) {
+        alerts.push({
+          level: "warn",
+          text: `Every card is projected at ${fmtPct(ratio)} utilization — under the 9.9% cap but above the ideal 4.9% ceiling. Consider trimming spend or enabling AZEO to concentrate it on one card instead.`,
+        });
+      } else if (ratio < IDEAL_MIN && totalSpend > 0) {
+        alerts.push({
+          level: "info",
+          text: `Every card is projected under 1% utilization (${fmtPct(ratio)}). Not harmful, but you have headroom to spend more while staying in the ideal band.`,
+        });
+      } else if (totalSpend > 0) {
+        alerts.push({
+          level: "ok",
+          text: `All cards land at ${fmtPct(ratio)} utilization — right in the ideal 1–4.9% zone.`,
+        });
+      }
+    }
+
+    // Account age protection: flag old cards sitting at $0 with no recent activity
+    const today = new Date();
+    cards.forEach((c) => {
+      const ageMonths = monthsBetween(c.openDate, today);
+      const target = allocations[c.id] ? allocations[c.id].target : 0;
+      if (ageMonths >= OLD_CARD_MONTHS && target === 0) {
+        const inactiveDays = daysSince(c.lastActivity, today);
+        if (inactiveDays >= INACTIVITY_ALERT_DAYS) {
+          alerts.push({
+            level: "warn",
+            text: `"${c.name || "Card"}" is ${ageMonths} months old and has had no logged activity in ${inactiveDays === Infinity ? "a long time" : inactiveDays + " days"}. Put a small ${fmtMoney(KEEPALIVE_AMOUNT)} recurring charge on it (paid off before the statement closes) to avoid an issuer inactivity closure, which would hurt your average age of accounts.`,
+          });
+        }
+      }
+    });
+
+    if (totalSpend === 0 || !state.totalSpend) {
+      alerts.unshift({
+        level: "info",
+        text: `Enter a total expected monthly spend above to generate targets.`,
+      });
+    }
+
+    return { allocations, alerts, useAzeo, cards, primary };
+  }
+
+  function statusForUtil(util) {
+    if (util === 0) return { label: "AZEO $0", cls: "gray" };
+    if (util > HARD_CAP) return { label: "Over 9.9% cap", cls: "red" };
+    if (util > IDEAL_MAX) return { label: "Caution", cls: "yellow" };
+    if (util >= IDEAL_MIN) return { label: "Ideal", cls: "green" };
+    return { label: "Under 1%", cls: "yellow" };
+  }
+
+  function renderDashboard() {
+    const result = computeAllocation();
+    const emptyEl = document.getElementById("dashboardEmpty");
+    const contentEl = document.getElementById("dashboardContent");
+
+    if (!result) {
+      emptyEl.style.display = "block";
+      contentEl.style.display = "none";
+      return;
+    }
+    emptyEl.style.display = "none";
+    contentEl.style.display = "block";
+
+    state.lastAllocation = {};
+    Object.keys(result.allocations).forEach((id) => {
+      state.lastAllocation[id] = result.allocations[id];
+    });
+    saveState();
+
+    // Summary stats
+    const sumLimits = result.cards.reduce((s, c) => s + c.limit, 0);
+    const sumTarget = Object.values(result.allocations).reduce((s, a) => s + a.target, 0);
+    const aggUtil = sumLimits > 0 ? sumTarget / sumLimits : 0;
+
+    const summaryGrid = document.getElementById("summaryGrid");
+    summaryGrid.innerHTML = `
+      <div class="stat"><div class="label">Mode</div><div class="value">${result.useAzeo ? "AZEO" : "Spread"}</div></div>
+      <div class="stat"><div class="label">Total Target Spend</div><div class="value">${fmtMoney(sumTarget)}</div></div>
+      <div class="stat"><div class="label">Aggregate Utilization</div><div class="value">${fmtPct(aggUtil)}</div></div>
+      <div class="stat"><div class="label">Total Credit Limit</div><div class="value">${fmtMoney(sumLimits)}</div></div>
+    `;
+
+    // Allocation table
+    const body = document.getElementById("allocBody");
+    body.innerHTML = "";
+    result.cards.forEach((c) => {
+      const a = result.allocations[c.id];
+      const st = statusForUtil(a.util);
+      const barPct = Math.min((a.util / HARD_CAP) * 100, 100);
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td data-label="Card">${escapeHtml(c.name || "Unnamed card")}${c.isPrimary ? ' <span class="oldest-tag">PRIMARY</span>' : ""}</td>
+        <td data-label="Target Spend">${fmtMoney(a.target)}</td>
+        <td data-label="Target Utilization">
+          ${fmtPct(a.util)}
+          <div class="util-bar-track"><div class="util-bar-fill" style="width:${barPct}%; background:var(--${st.cls === "gray" ? "text-dim" : st.cls});"></div></div>
+        </td>
+        <td data-label="Status"><span class="badge ${st.cls}">${st.label}</span></td>
+      `;
+      body.appendChild(tr);
+    });
+
+    // Alerts
+    const alertList = document.getElementById("alertList");
+    alertList.innerHTML = "";
+    if (!result.alerts.length) {
+      alertList.innerHTML = `<li class="alert-item ok">Everything looks optimal — no action needed.</li>`;
+    } else {
+      result.alerts.forEach((a) => {
+        const li = document.createElement("li");
+        li.className = "alert-item " + a.level;
+        li.textContent = a.text;
+        alertList.appendChild(li);
+      });
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  document.getElementById("calcBtn").addEventListener("click", () => {
+    renderDashboard();
+    renderTracker();
+  });
+
+  // ---------- Weekly tracker ----------
+  let currentWeekAnchor = weekStart(new Date());
+
+  function renderTracker() {
+    const emptyEl = document.getElementById("trackerEmpty");
+    const contentEl = document.getElementById("trackerContent");
+
+    if (!state.lastAllocation || !state.cards.length) {
+      emptyEl.style.display = "block";
+      contentEl.style.display = "none";
+      return;
+    }
+    emptyEl.style.display = "none";
+    contentEl.style.display = "block";
+
+    const weekKey = isoWeekKey(currentWeekAnchor);
+    const weekEnd = new Date(currentWeekAnchor);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    document.getElementById("weekLabel").textContent =
+      `Week of ${currentWeekAnchor.toLocaleDateString(undefined, { month: "short", day: "numeric" })} – ${weekEnd.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}`;
+
+    if (!state.weeklyLogs[weekKey]) state.weeklyLogs[weekKey] = {};
+    const weekLog = state.weeklyLogs[weekKey];
+
+    const body = document.getElementById("trackerBody");
+    body.innerHTML = "";
+
+    state.cards.filter((c) => c.limit > 0).forEach((c) => {
+      const alloc = state.lastAllocation[c.id] || { target: 0, util: 0 };
+      const actual = weekLog[c.id] ?? "";
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td data-label="Card">${escapeHtml(c.name || "Unnamed card")}</td>
+        <td data-label="Target Spend">${fmtMoney(alloc.target)}</td>
+        <td data-label="Current Balance"><input type="number" min="0" step="1" value="${actual}" placeholder="0"></td>
+        <td data-label="Pace Status"><span class="badge gray">—</span></td>
+      `;
+      const input = tr.querySelector("input");
+      const badgeCell = tr.children[3];
+
+      function updatePace() {
+        const val = input.value === "" ? null : parseFloat(input.value);
+        const pace = computePace(c, alloc, val);
+        badgeCell.innerHTML = `<span class="badge ${pace.cls}">${pace.label}</span>`;
+      }
+
+      input.addEventListener("input", () => {
+        const v = input.value === "" ? null : parseFloat(input.value);
+        if (v === null) delete weekLog[c.id];
+        else weekLog[c.id] = v;
+        saveState();
+        updatePace();
+      });
+
+      updatePace();
+      body.appendChild(tr);
+    });
+  }
+
+  function computePace(card, alloc, actualBalance) {
+    if (actualBalance === null || isNaN(actualBalance)) {
+      return { label: "Not logged", cls: "gray" };
+    }
+    const limit = card.limit || 1;
+    const actualUtil = actualBalance / limit;
+
+    if (actualUtil > HARD_CAP) {
+      return { label: "Over 9.9% now", cls: "red" };
+    }
+
+    if (alloc.target === 0) {
+      // AZEO secondary card: should stay at $0
+      if (actualBalance > 0) return { label: "Should be $0 (AZEO)", cls: "red" };
+      return { label: "On track", cls: "green" };
+    }
+
+    const statementDay = card.statementDay || 1;
+    const { progress } = cycleProgress(statementDay);
+    const expected = alloc.target * Math.max(progress, 0.05);
+    const projected = progress > 0 ? actualBalance / progress : actualBalance;
+    const projectedUtil = projected / limit;
+
+    if (projectedUtil > HARD_CAP) {
+      return { label: "On pace to exceed 9.9%", cls: "red" };
+    }
+    if (actualBalance < expected * 0.5) {
+      return { label: "Underspending", cls: "yellow" };
+    }
+    if (actualBalance > expected * 1.5 && actualUtil > IDEAL_MAX) {
+      return { label: "Running hot", cls: "yellow" };
+    }
+    return { label: "On track", cls: "green" };
+  }
+
+  document.getElementById("prevWeekBtn").addEventListener("click", () => {
+    currentWeekAnchor.setDate(currentWeekAnchor.getDate() - 7);
+    renderTracker();
+  });
+  document.getElementById("nextWeekBtn").addEventListener("click", () => {
+    currentWeekAnchor.setDate(currentWeekAnchor.getDate() + 7);
+    renderTracker();
+  });
+  document.getElementById("thisWeekBtn").addEventListener("click", () => {
+    currentWeekAnchor = weekStart(new Date());
+    renderTracker();
+  });
+
+  // ---------- Initial render ----------
+  renderCards();
+  renderDashboard();
+  renderTracker();
+})();
+</script>
+</body>
+</html>
